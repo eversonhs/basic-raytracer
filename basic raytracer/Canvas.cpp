@@ -1,8 +1,12 @@
 #include "Canvas.h"
 
-Canvas::Canvas(const char * title, Uint32 wWidth, Uint32 wHeight) :
-    windowTitle(title), windowWidth(wWidth), windowHeight(wHeight),
-    window(nullptr), renderer(nullptr)
+Canvas::Canvas(const char * title, int wWidth, int wHeight) :
+    windowTitle(title),
+    windowWidth(wWidth),
+    windowHeight(wHeight),
+    isRunning(false),
+    window(nullptr),
+    renderer(nullptr)
 {}
 
 Canvas::~Canvas() {
@@ -35,15 +39,57 @@ bool Canvas::init()
         SDL_Log("Error: Unable to create a renderer. ERROR: %s", SDL_GetError());
         return false;
     }
-
-    return true;
+    isRunning = true;
+    return isRunning;
 }
 
 void Canvas::putPixel(SDL_Color color, int x, int y) {
+    std::tuple<int, int> p = canvasToOrigin(x, y);
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderDrawPoint(renderer, x, y);
+    SDL_RenderDrawPoint(renderer, std::get<0>(p), std::get<1>(p));
 }
 
 void Canvas::update() {
     SDL_RenderPresent(renderer);
+}
+
+void Canvas::wait()
+{
+    while (isRunning) 
+    {
+        processInput();
+    }
+}
+
+int Canvas::getWidth() const
+{
+    return windowWidth;
+}
+
+int Canvas::getHeight() const
+{
+    return windowHeight;
+}
+
+std::tuple<int, int> Canvas::canvasToOrigin(int x, int y)
+{
+    int px = (windowWidth / 2) + x;
+    int py = (windowHeight / 2) - y;
+    return std::make_tuple(px, py);
+}
+
+void Canvas::processInput()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+        case SDL_QUIT:
+            isRunning = false;
+            break;
+        default:
+            break;
+        }
+    }
 }
